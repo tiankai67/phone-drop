@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Phone Drop</title>
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body>
+    <main class="shell">
+      <section id="gate" class="panel" hidden>
+        <div class="brand">
+          <div class="mark">PD</div>
+          <div>
+            <h1>需要访问口令</h1>
+            <p>该服务已启用访问口令，请输入后使用。</p>
+          </div>
+        </div>
+        <div class="url-row">
+          <input id="pwInput" type="password" placeholder="访问口令" autocomplete="current-password">
+          <button id="pwBtn">进入</button>
+        </div>
+        <p id="pwErr" class="hint"></p>
+      </section>
+
+      <section id="desktop" class="panel">
+        <div class="brand">
+          <div class="mark">PD</div>
+          <div>
+            <h1>Phone Drop</h1>
+            <p>手机扫码，把照片或文件传到这台电脑。</p>
+          </div>
+        </div>
+
+        <div class="qr-wrap">
+          <div id="qr" class="qr"></div>
+        </div>
+
+        <div class="url-row">
+          <input id="uploadUrl" readonly>
+          <button id="copyBtn">复制</button>
+        </div>
+
+        <p class="hint">电脑和 iPhone 需要连接同一个 Wi-Fi。收到的文件会保存到 <span id="receiveDir"></span></p>
+      </section>
+
+      <section id="phone" class="panel upload-panel" hidden>
+        <div class="brand compact">
+          <div class="mark">PD</div>
+          <div>
+            <h1>发送文件</h1>
+            <p>选择照片、视频或任意文件。</p>
+          </div>
+        </div>
+
+        <form id="uploadForm" class="drop-area">
+          <input id="fileInput" name="files" type="file" multiple>
+          <div class="upload-icon">+</div>
+          <strong>点这里选择文件</strong>
+          <span>可以一次选择多个</span>
+        </form>
+
+        <div id="status" class="status">等待选择文件</div>
+        <ul id="list" class="file-list"></ul>
+      </section>
+    </main>
+
+    <script src="/app.js"></script>
+  </body>
+</html>

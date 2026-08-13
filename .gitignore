@@ -1,0 +1,5 @@
+node_modules/
+received-files/
+.env
+.DS_Store
+Aws.exe

@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: phone-drop
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: node server.js
+    healthCheckPath: /
+    envVars:
+      - key: PASSWORD
+        sync: false
