@@ -206,6 +206,81 @@ button {
   overflow-wrap: anywhere;
 }
 
+textarea {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px 14px;
+  font: inherit;
+  color: var(--ink);
+  background: white;
+  resize: vertical;
+}
+
+.text-card {
+  margin-top: 18px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--soft);
+  display: grid;
+  gap: 10px;
+}
+
+.text-card strong {
+  font-size: 18px;
+}
+
+.text-card button {
+  justify-self: start;
+}
+
+.texts {
+  margin-top: 22px;
+}
+
+.texts h2 {
+  font-size: 20px;
+  margin: 0 0 12px;
+}
+
+.text-list {
+  display: grid;
+  gap: 10px;
+}
+
+.text-list .empty {
+  color: var(--muted);
+  margin: 0;
+}
+
+.text-item {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: white;
+  overflow: hidden;
+}
+
+.text-head {
+  padding: 8px 12px;
+  background: var(--soft);
+  border-bottom: 1px solid var(--line);
+  font-size: 13px;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+.text-body {
+  margin: 0;
+  padding: 12px 14px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-family: inherit;
+  max-height: 280px;
+  overflow: auto;
+}
+
 @media (max-width: 520px) {
   .shell {
     padding: 14px;
