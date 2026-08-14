@@ -8,21 +8,6 @@
   </head>
   <body>
     <main class="shell">
-      <section id="gate" class="panel" hidden>
-        <div class="brand">
-          <div class="mark">PD</div>
-          <div>
-            <h1>需要访问口令</h1>
-            <p>该服务已启用访问口令，请输入后使用。</p>
-          </div>
-        </div>
-        <div class="url-row">
-          <input id="pwInput" type="password" placeholder="访问口令" autocomplete="current-password">
-          <button id="pwBtn">进入</button>
-        </div>
-        <p id="pwErr" class="hint"></p>
-      </section>
-
       <section id="desktop" class="panel">
         <div class="brand">
           <div class="mark">PD</div>
@@ -42,6 +27,11 @@
         </div>
 
         <p class="hint">电脑和 iPhone 需要连接同一个 Wi-Fi。收到的文件会保存到 <span id="receiveDir"></span></p>
+
+        <div class="texts">
+          <h2>收到的文本</h2>
+          <div id="textList" class="text-list"><p class="empty">还没有收到文本。</p></div>
+        </div>
       </section>
 
       <section id="phone" class="panel upload-panel" hidden>
@@ -62,6 +52,13 @@
 
         <div id="status" class="status">等待选择文件</div>
         <ul id="list" class="file-list"></ul>
+
+        <div class="text-card">
+          <strong>发送文本</strong>
+          <textarea id="textInput" rows="4" placeholder="输入要传送到电脑的文本…"></textarea>
+          <button id="sendTextBtn" type="button">发送</button>
+          <div id="textStatus" class="status">等待输入</div>
+        </div>
       </section>
     </main>
 
