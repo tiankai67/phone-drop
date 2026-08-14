@@ -5,27 +5,11 @@ import path from 'node:path';
 import QRCode from 'qrcode';
 
 const PORT = Number(process.env.PORT || 3456);
-const PASSWORD = process.env.PASSWORD || '';
 const ROOT = path.dirname(new URL(import.meta.url).pathname).replace(/^\/([A-Za-z]:)/, '$1');
 const PUBLIC_DIR = path.join(ROOT, 'public');
 const UPLOAD_DIR = path.join(ROOT, 'received-files');
 
 fs.mkdirSync(UPLOAD_DIR, { recursive: true });
-
-// 公网部署时，请求经过反向代理（Render/Railway 等），Host 与协议来自请求头。
-function publicBase(req) {
-  const proto = String(req.headers['x-forwarded-proto'] || (req.socket.encrypted ? 'https' : 'http')).split(',')[0].trim();
-  const host = req.headers.host || `localhost:${PORT}`;
-  return `${proto}://${host}`;
-}
-
-// 可选访问口令：通过 URL 参数 ?pw= 或请求头 x-password 传递。
-function authorized(req, url) {
-  if (!PASSWORD) return true;
-  const viaQuery = url.searchParams.get('pw');
-  const viaHeader = req.headers['x-password'];
-  return viaQuery === PASSWORD || viaHeader === PASSWORD;
-}
 
 function localAddress() {
   const nets = os.networkInterfaces();
@@ -114,30 +98,37 @@ function parseMultipart(req, boundary) {
   });
 }
 
+function readBody(req, limit = 1024 * 1024) {
+  return new Promise((resolve, reject) => {
+    const chunks = [];
+    let size = 0;
+    req.on('data', chunk => {
+      size += chunk.length;
+      if (size > limit) {
+        req.destroy();
+        reject(new Error('内容过长。'));
+        return;
+      }
+      chunks.push(chunk);
+    });
+    req.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')));
+    req.on('error', reject);
+  });
+}
+
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url || '/', `http://${req.headers.host}`);
 
-  // 受保护接口：需要口令（若已配置）
-  const protectedApi = (pathname) => req.method === 'GET' && url.pathname === pathname;
-  if (protectedApi('/api/info') || protectedApi('/api/qr') ||
-      (req.method === 'POST' && url.pathname === '/api/upload')) {
-    if (!authorized(req, url)) {
-      return send(res, 401, JSON.stringify({ error: '需要访问口令。' }), 'application/json; charset=utf-8');
-    }
-  }
-
   if (req.method === 'GET' && url.pathname === '/api/info') {
-    const base = publicBase(req);
-    const uploadUrl = PASSWORD ? `${base}/upload?pw=${encodeURIComponent(PASSWORD)}` : `${base}/upload`;
+    const host = localAddress();
     return send(res, 200, JSON.stringify({
-      uploadUrl,
+      uploadUrl: `http://${host}:${PORT}/upload`,
       receiveDir: UPLOAD_DIR
     }), 'application/json; charset=utf-8');
   }
 
   if (req.method === 'GET' && url.pathname === '/api/qr') {
-    const base = publicBase(req);
-    const data = url.searchParams.get('data') || (PASSWORD ? `${base}/upload?pw=${encodeURIComponent(PASSWORD)}` : `${base}/upload`);
+    const data = url.searchParams.get('data') || `http://${localAddress()}:${PORT}/upload`;
     const png = await QRCode.toBuffer(data, {
       type: 'png',
       width: 360,
@@ -160,6 +151,40 @@ const server = http.createServer(async (req, res) => {
     try {
       const files = await parseMultipart(req, match[1] || match[2]);
       return send(res, 200, JSON.stringify({ ok: true, files }), 'application/json; charset=utf-8');
+    } catch (error) {
+      return send(res, 500, JSON.stringify({ error: error.message }), 'application/json; charset=utf-8');
+    }
+  }
+
+  if (req.method === 'POST' && url.pathname === '/api/text') {
+    try {
+      const raw = await readBody(req);
+      let text = '';
+      try { text = (JSON.parse(raw) || {}).text || ''; } catch { text = raw; }
+      text = String(text).slice(0, 100000);
+      if (!text.trim()) {
+        return send(res, 400, JSON.stringify({ error: '文本为空。' }), 'application/json; charset=utf-8');
+      }
+      const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+      const target = uniquePath(`note_${stamp}.txt`);
+      fs.writeFileSync(target, text, 'utf8');
+      return send(res, 200, JSON.stringify({ ok: true, name: path.basename(target) }), 'application/json; charset=utf-8');
+    } catch (error) {
+      return send(res, 500, JSON.stringify({ error: error.message }), 'application/json; charset=utf-8');
+    }
+  }
+
+  if (req.method === 'GET' && url.pathname === '/api/texts') {
+    try {
+      const files = fs.readdirSync(UPLOAD_DIR).filter(f => f.toLowerCase().endsWith('.txt'));
+      const items = files.map(f => {
+        const p = path.join(UPLOAD_DIR, f);
+        const stat = fs.statSync(p);
+        let content = '';
+        try { content = fs.readFileSync(p, 'utf8'); } catch {}
+        return { name: f, content, mtime: stat.mtimeMs };
+      }).sort((a, b) => b.mtime - a.mtime).slice(0, 50);
+      return send(res, 200, JSON.stringify({ items }), 'application/json; charset=utf-8');
     } catch (error) {
       return send(res, 500, JSON.stringify({ error: error.message }), 'application/json; charset=utf-8');
     }
@@ -189,5 +214,4 @@ server.listen(PORT, '0.0.0.0', () => {
   const url = `http://${localAddress()}:${PORT}`;
   console.log(`Phone Drop is running: ${url}`);
   console.log(`Files will be saved to: ${UPLOAD_DIR}`);
-  if (PASSWORD) console.log('Access password is ENABLED.');
 });
